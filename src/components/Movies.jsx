@@ -7,62 +7,35 @@ import MovieDetails from './MovieDetails';
 function Movies() {
   const [movies, setMovies] = useState([]);
   const [pageNum, setPage] = useState(1);
-  const [hovered, setHovered] = useState('');
   const [favourites, setFavorites] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
 
+  
+
   useEffect(() => {
-    // fetchMovies(pageNum);
-    fetchMovie();
+    const fetchMovies = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/movie');
+        setMovies(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
 
+    fetchMovies();
   }, []);
-
-  const fetchMovie = async () => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/movie`
-      );
-      console.log(response.data);
-      setMovies(response.data);
-
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  // const fetchMovies = async (page) => {
-  //   try {
-  //     const response = await axios.get(
-  //       `https://api.themoviedb.org/3/trending/movie/week?api_key=af64e76d663517cdc595fc3a08de6d41&page=${page}`
-  //     );
-  //     setMovies(response.data.results);
-  //   } catch (error) {
-  //     console.error('Error:', error);
-  //   }
-  // };
 
   const handleSearch = async (searchQuery) => {
     try {
-      const response = await axios.get(
-        `https://api.themoviedb.org/3/search/movie?api_key=af64e76d663517cdc595fc3a08de6d41&query=${searchQuery}`
-      );
-      setSearchResults(response.data.results);
+      const response = await axios.get(`http://127.0.0.1:8000/movie?title=${searchQuery}`);
+      setMovies(response.data);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  const handleMovieClick = async (movie) => {
-    try {
-      const response = await axios.get(
-        `https://api.themoviedb.org/3/movie/${movie.id}?api_key=af64e76d663517cdc595fc3a08de6d41&append_to_response=credits,videos,reviews`
-      );
-      const movieWithCredits = { ...movie, ...response.data };
-      setSelectedMovie(movieWithCredits);
-    } catch (error) {
-      console.error('Error:', error);
-    }
+  const handleMovieClick = (movie) => {
+    setSelectedMovie(movie.id);
   };
 
   const clearSelectedMovie = () => {
@@ -92,75 +65,56 @@ function Movies() {
   };
 
   return (
-    <div className="mt-8 text-center">
-      <div className="mb-4">
+  <div className=" text-center bg-gradient-to-r from-orange-400 to-amber-100" >
+
+  
+    <div className=" pt-8">
+      <div className="mb-4 w-80 mx-auto  ">
         <input
           type="text"
           placeholder="Search for a movie"
           onChange={(e) => handleSearch(e.target.value)}
-          className="px-2 py-1 rounded-md border border-gray-300"
+          className="border border-black border-300 px-2 py-1 rounded-md border border-gray-300"
         />
         <button
           onClick={clearSelectedMovie}
-          className="px-4 py-2 text-white bg-amber-500 rounded-md"
+          className="border border-gray-300 px-4 py-2 text-white bg-gradient-to-r from-amber-400 to-red-500 hover:from-pink-500 hover:to-yellow-500 rounded mt-2 "
         >
           Clear
         </button>
       </div>
 
       {selectedMovie ? (
-        <MovieDetails movie={selectedMovie} />
+        <MovieDetails movieId={selectedMovie} />
       ) : (
         <div>
-          <div className="mb-8 font-bold text-2xl text-center">
-            Trending Movies
-          </div>
+          <div className="mb-8 font-bold text-2xl text-center">Trending Movies</div>
           <div className="flex flex-wrap justify-center">
-            {searchResults.length > 0 ? (
-              // Render search results
-              searchResults.map((movie) => (
-                <div
-                  key={movie.id}
-                  className="bg-center bg-cover w-[160px] h-[30vh] md:h-[40vh] md:w-[180px] m-4 rounded-xl hover:scale-125 border-2 duration-300 flex items-end relative"
-                  style={{
-                    backgroundImage: `url(https://image.tmdb.org/t/p/original${movie.poster_path})`,
-                  }}
-                  onClick={() => handleMovieClick(movie)}
-                >
-                  <div className="font-bold text-white bg-gray-900 bg-opacity-60 p-2 text-center w-full rounded-b-xl">
-                    {movie.title}
-                  </div>
+            {movies.map((movie) => (
+              <div
+                key={movie.id}
+                className="bg-center bg-cover w-[160px] h-[30vh] md:h-[40vh] md:w-[180px] m-4 rounded-xl hover:scale-125 border-2 duration-300 flex items-end relative"
+                style={{
+                  backgroundImage: `url(${movie.poster_url})`,
+                }}
+                onClick={() => handleMovieClick(movie)}
+              >
+                <div className="font-bold text-white bg-gray-900 bg-opacity-60 p-2 text-center w-full rounded-b-xl">
+                  {movie.title}
                 </div>
-              ))
-            ) : (
-              // Render trending movies
-              movies.slice(0, 3).map((movie) => (
-                <div
-                  key={movie.id}
-                  className="bg-center bg-cover w-[160px] h-[30vh] md:h-[40vh] md:w-[180px] m-4 rounded-xl hover:scale-125 border-2 duration-300 flex items-end relative"
-                  style={{
-                    backgroundImage: `url(${movie.poster_url})`,
-                  }}
-                  // onClick={() => handleMovieClick(movie)}
-                  // onMouseEnter={() => setHovered(movie.id)}
-                  // onMouseLeave={() => setHovered('')}
-                >
-                                    <div className="font-bold text-white bg-gray-900 bg-opacity-60 p-2 text-center w-full rounded-b-xl">
-                    {movie.title}
-                  </div>
-                </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
-          <Pagination
+          {/* <Pagination
             pageNum={pageNum}
             totalResults={20}
             resultsPerPage={1}
             onPrev={onPrev}
             onNext={onNext}
-          />
+          /> */}
         </div>
       )}
+    </div>
     </div>
   );
 }
